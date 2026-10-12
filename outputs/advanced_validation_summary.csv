@@ -1,0 +1,12 @@
+Metric,Value
+Monthly Observations,25
+Mean Monthly Revenue,832556.7371200002
+Median Monthly Revenue,737014.26
+Revenue Standard Deviation,276993.82692974183
+Minimum Monthly Revenue,523631.89
+Maximum Monthly Revenue,1509496.33
+IQR Lower Bound,245271.73849999986
+IQR Upper Bound,1331769.7745000003
+Spearman Correlation with Time,0.24692307692307694
+Spearman p-value,0.23406875542952843
+Trend Description,Generally Increasing

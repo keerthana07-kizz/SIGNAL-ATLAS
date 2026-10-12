@@ -1,0 +1,11 @@
+Column,Data_Type,Missing_Values,Missing_Percent
+Invoice,object,0,0.0
+StockCode,object,0,0.0
+Description,object,2928,0.56
+Quantity,int64,0,0.0
+InvoiceDate,datetime64[ns],0,0.0
+Price,float64,0,0.0
+Customer_ID,float64,107927,20.54
+Country,object,0,0.0
+IsCancelled,boolean,0,0.0
+TransactionValue,float64,0,0.0
