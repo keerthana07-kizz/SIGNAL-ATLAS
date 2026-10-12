@@ -1,0 +1,6 @@
+Metric,Value
+Products analyzed,5305
+Products flagged for review,160
+Flagged percentage,3.02
+Model,Isolation Forest
+Contamination setting,0.03
