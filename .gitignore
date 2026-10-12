@@ -179,3 +179,20 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# SIGNAL ATLAS - local data and generated outputs
+data/
+outputs/
+*.parquet
+
+# Keep the project folders visible in Git
+!data/.gitkeep
+!outputs/.gitkeep
+
+# Local environment and secrets
+.env
+.streamlit/secrets.toml
+
+# Temporary files
+*.tmp
+*.bak

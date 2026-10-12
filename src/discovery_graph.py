@@ -4,104 +4,142 @@ from pathlib import Path
 import pandas as pd
 import networkx as nx
 
-# SIGNAL ATLAS - DISCOVERY GRAPH
-
+# SIGNAL ATLAS project folders
 BASE_DIR = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = BASE_DIR / "outputs"
+OUTPUTS_DIR = BASE_DIR / "outputs"
+OUTPUTS_DIR.mkdir(exist_ok=True)
 
-print("\nSIGNAL ATLAS - Discovery Graph")
-print("-" * 45)
+# Load existing analysis results
+country_df = pd.read_csv(OUTPUTS_DIR / "country_revenue.csv")
+product_df = pd.read_csv(OUTPUTS_DIR / "product_revenue.csv")
+segment_df = pd.read_csv(OUTPUTS_DIR / "customer_segment_summary.csv")
 
-# Locate analysis files
-country_file = OUTPUT_DIR / "country_revenue.csv"
-product_file = OUTPUT_DIR / "product_revenue.csv"
-customer_file = OUTPUT_DIR / "customer_segment_summary.csv"
-
-for file in [country_file, product_file, customer_file]:
-    if not file.exists():
-        raise FileNotFoundError(
-            f"Required file not found: {file}\n"
-            "Please run the corresponding analysis scripts first."
-        )
-
-# Load the existing analysis outputs
-countries = pd.read_csv(country_file)
-products = pd.read_csv(product_file)
-customers = pd.read_csv(customer_file)
-
-if countries.empty or products.empty or customers.empty:
-    raise ValueError("One or more analysis files contain no data.")
-
-# Create graph
 graph = nx.Graph()
 
-# Add country nodes
-for _, row in countries.head(10).iterrows():
-    country = str(row.iloc[0])
-    graph.add_node(
-        f"Country: {country}",
-        node_type="Country",
+# Add the main discovery node
+graph.add_node(
+    "SIGNAL ATLAS",
+    node_type="center",
+    value=0
+)
+
+def add_data_nodes(data, label, node_type, value_column, top_n=10):
+    """Add the highest-value records to the discovery graph."""
+    if data.empty or value_column not in data.columns:
+        print(f"Skipping {label}: required data is missing.")
+        return
+
+    name_column = data.columns[0]
+    ranked = data.copy()
+    ranked[value_column] = pd.to_numeric(
+        ranked[value_column], errors="coerce"
     )
+    ranked = ranked.dropna(subset=[value_column])
+    ranked = ranked.nlargest(top_n, value_column)
 
-# Add product nodes
-for _, row in products.head(10).iterrows():
-    product = str(row.iloc[0])
-    graph.add_node(
-        f"Product: {product}",
-        node_type="Product",
-    )
+    for _, row in ranked.iterrows():
+        name = str(row[name_column])
+        node_id = f"{node_type}:{name}"
+        value = float(row[value_column])
 
-# Add customer segment nodes
-for _, row in customers.iterrows():
-    segment = str(row["Customer_Segment"])
-    graph.add_node(
-        f"Customer Segment: {segment}",
-        node_type="Customer Segment",
-    )
-
-# Add a central node connecting the findings
-central_node = "SIGNAL ATLAS: Business Insights"
-graph.add_node(central_node, node_type="Central Insight")
-
-for node in list(graph.nodes):
-    if node != central_node:
-        graph.add_edge(
-            central_node,
-            node,
-            relationship="Included in business analysis",
+        graph.add_node(
+            node_id,
+            label=name,
+            node_type=node_type,
+            value=value
         )
 
-# Export graph nodes
+        graph.add_edge(
+            "SIGNAL ATLAS",
+            node_id,
+            relationship=f"top_{label}",
+            weight=value
+        )
+
+# Add countries by revenue
+add_data_nodes(
+    country_df, "countries_by_revenue",
+    "country", "Revenue", top_n=10
+)
+
+# Add products by revenue
+add_data_nodes(
+    product_df, "products_by_revenue",
+    "product", "Revenue", top_n=10
+)
+
+# Add customer segments
+if not segment_df.empty:
+    segment_name_col = next(
+        (
+            col for col in segment_df.columns
+            if "segment" in col.lower()
+        ),
+        None
+    )
+
+    customer_count_col = next(
+        (
+            col for col in segment_df.columns
+            if any(word in col.lower() for word in
+                   ["customer_count", "customers", "count"])
+        ),
+        None
+    )
+
+    if segment_name_col and customer_count_col:
+        segment_df[customer_count_col] = pd.to_numeric(
+            segment_df[customer_count_col],
+            errors="coerce"
+        )
+
+        for _, row in segment_df.dropna(
+            subset=[customer_count_col]
+        ).iterrows():
+            name = str(row[segment_name_col])
+            value = float(row[customer_count_col])
+            node_id = f"segment:{name}"
+
+            graph.add_node(
+                node_id,
+                label=name,
+                node_type="customer_segment",
+                value=value
+            )
+
+            graph.add_edge(
+                "SIGNAL ATLAS",
+                node_id,
+                relationship="customer_segment",
+                weight=value
+            )
+    else:
+        print("Check customer segment column names.")
+
+# Export graph nodes and edges
 nodes = [
-    {
-        "Node": node,
-        "Node_Type": attrs.get("node_type", "Unknown"),
-    }
-    for node, attrs in graph.nodes(data=True)
+    {"node_id": node, **attributes}
+    for node, attributes in graph.nodes(data=True)
+]
+
+edges = [
+    {"source": source, "target": target, **attributes}
+    for source, target, attributes in graph.edges(data=True)
 ]
 
 pd.DataFrame(nodes).to_csv(
-    OUTPUT_DIR / "discovery_graph_nodes.csv",
-    index=False,
+    OUTPUTS_DIR / "discovery_graph_nodes.csv",
+    index=False
 )
-
-# Export graph connections
-edges = [
-    {
-        "Source": source,
-        "Target": target,
-        "Relationship": attrs.get("relationship", ""),
-    }
-    for source, target, attrs in graph.edges(data=True)
-]
 
 pd.DataFrame(edges).to_csv(
-    OUTPUT_DIR / "discovery_graph_edges.csv",
-    index=False,
+    OUTPUTS_DIR / "discovery_graph_edges.csv",
+    index=False
 )
 
+print("\nSIGNAL ATLAS DISCOVERY GRAPH COMPLETED!")
 print(f"Nodes created: {graph.number_of_nodes()}")
 print(f"Connections created: {graph.number_of_edges()}")
-print("Saved discovery_graph_nodes.csv")
-print("Saved discovery_graph_edges.csv")
-print("\nDISCOVERY GRAPH COMPLETED SUCCESSFULLY!")
+print("Files saved:")
+print(OUTPUTS_DIR / "discovery_graph_nodes.csv")
+print(OUTPUTS_DIR / "discovery_graph_edges.csv")

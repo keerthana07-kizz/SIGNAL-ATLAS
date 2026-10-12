@@ -1,5 +1,0 @@
-Scenario,Assumption,Change_Percent,Baseline_Revenue,Simulated_Revenue,Revenue_Impact
-Baseline,No change,0,20813918.428000003,20813918.428000003,0.0
-Sales Increase,Sales volume increases by 10%,10,20813918.428000003,22895310.270800006,2081391.8428000025
-Sales Decrease,Sales volume decreases by 15%,-15,20813918.428000003,17691830.6638,-3122087.764200002
-Price Increase,Prices increase by 5%; units sold unchanged,5,20813918.428000003,21854614.349400003,1040695.9213999994

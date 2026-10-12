@@ -544,3 +544,95 @@ print(f"File size: {REPORT_PATH.stat().st_size / 1024:.1f} KB")
 print("Sheets created:")
 for ws in wb.worksheets:
     print(f"- {ws.title}")
+
+# Add advanced SIGNAL ATLAS analysis sheets
+from pathlib import Path
+import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+OUTPUTS_DIR = BASE_DIR / "outputs"
+EXCEL_PATH = OUTPUTS_DIR / "SIGNAL_ATLAS_Excel_Report.xlsx"
+
+extra_sheets = {
+    "Customer Intelligence": "customer_segment_summary.csv",
+    "Anomaly Detection": "flagged_product_anomalies.csv",
+    "Statistical Validation": "statistical_validation.csv",
+    "What-If Simulation": "what_if_simulation.csv",
+}
+
+if not EXCEL_PATH.exists():
+    raise FileNotFoundError(
+        f"Excel report not found: {EXCEL_PATH}\n"
+        "Run the existing excel_report.py first to create it."
+    )
+
+with pd.ExcelWriter(
+    EXCEL_PATH,
+    engine="openpyxl",
+    mode="a",
+    if_sheet_exists="replace"
+) as writer:
+    for sheet_name, filename in extra_sheets.items():
+        csv_path = OUTPUTS_DIR / filename
+
+        if csv_path.exists():
+            data = pd.read_csv(csv_path)
+            data.to_excel(
+                writer,
+                sheet_name=sheet_name,
+                index=False
+            )
+            print(f"Added sheet: {sheet_name}")
+        else:
+            print(f"Skipped missing file: {filename}")
+
+# Apply consistent formatting to the new sheets
+workbook = load_workbook(EXCEL_PATH)
+
+for sheet_name in extra_sheets:
+    if sheet_name not in workbook.sheetnames:
+        continue
+
+    worksheet = workbook[sheet_name]
+    worksheet.freeze_panes = "A2"
+    worksheet.auto_filter.ref = worksheet.dimensions
+
+    for cell in worksheet[1]:
+        cell.font = Font(
+            bold=True,
+            color="FFFFFF"
+        )
+        cell.fill = PatternFill(
+            fill_type="solid",
+            fgColor="7886A5"
+        )
+        cell.alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+    for column_cells in worksheet.columns:
+        max_length = 0
+        column_letter = get_column_letter(
+            column_cells[0].column
+        )
+
+        for cell in column_cells[:200]:
+            if cell.value is not None:
+                max_length = max(
+                    max_length,
+                    len(str(cell.value))
+                )
+
+        worksheet.column_dimensions[
+            column_letter
+        ].width = min(max(max_length + 2, 12), 35)
+
+workbook.save(EXCEL_PATH)
+
+print("\nSIGNAL ATLAS EXCEL REPORT UPGRADED!")
+print(f"Workbook: {EXCEL_PATH}")
+print("Open the workbook in Microsoft Excel to view the new sheets.")

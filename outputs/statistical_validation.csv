@@ -1,8 +1,0 @@
-Metric,Value,Interpretation
-Monthly observations,25.0,Number of months analyzed
-Mean monthly revenue,832556.7371200002,Average monthly revenue
-Median monthly revenue,737014.26,Median monthly revenue
-Revenue standard deviation,276993.82692974183,Variation in monthly revenue
-Revenue coefficient of variation,0.3327026430510014,Relative variability of revenue
-Mann-Whitney U statistic,72.0,Comparison of the two month groups
-Mann-Whitney p-value,0.7648175395839272,Insufficient evidence of a difference between the two groups at the 5% significance level.
